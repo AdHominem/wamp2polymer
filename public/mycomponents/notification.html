@@ -1,18 +1,18 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
 
-<dom-module id="graph-component">
+<dom-module id="notification-component">
     <template>
         <link rel="stylesheet" href="materialize.min.css">
         <div class="box">
-            <h3>Score</h3>
-            <iframe src="mycomponents/chart.html" width="500" height="300" frameBorder="0" scrolling="no"></iframe>
-            <iframe src="mycomponents/linechart.html" width="2000" height="500" frameBorder="0" scrolling="no"></iframe>
+            <h3>Notifications: <br>{{message}}</h3>
         </div>
 
         <style>
             .box {
                 color: white;
-
                 background-color: #006699;
                 width: 50%;
                 height: 20%;
@@ -21,7 +21,6 @@
                 text-align: center;
             }
         </style>
-
     </template>
 </dom-module>
 
@@ -29,22 +28,28 @@
 <script src="autobahn.min.js"></script>
 
 <script>
-    let graphy = 0;
-    const graph_callback = (arg) => {
-        graphy = arg[0].payload;
+    let message = "No new messages";
+    const note_callback = (arg) => {
+        console.log(arg);
+        let type = arg[0].type;
+        if (type === "good") {
+            message = "You are driving excellently!"
+        } else {
+            message = "You are too fast! Limit is " + arg[0].speed_limit + ", you would need to pay " + arg[0].penalty + "€";
+        }
     };
 
-    class graphData extends Polymer.Element {
+    class noteData extends Polymer.Element {
         constructor() {
             super();
             this.wamp_connect('192.168.40.122');
             setInterval(() => {
-                this.graphy = graphy;
+                this.message = message;
             }, 900)
         }
 
         wamp_connect(arg) {
-            const service_name = 'graph-comp';
+            const service_name = 'notification-comp';
 
             this.wampConnection = new autobahn.Connection({
                 url: 'ws://' + arg + ':8080/ws',
@@ -53,29 +58,30 @@
             });
             this.wampConnection.open();
 
-            const publisher = 'aggregator.frontend.score';
+            const publisher = 'aggregator.frontend.bad';
+            const publisher2 = 'aggregator.frontend.good';
 
             this.wampConnection.onopen = (session) => {
                 this.current_session = session;
                 console.log("Connection " + service_name + " session open");
-                session.subscribe(publisher, graph_callback).then(
+                session.subscribe(publisher, note_callback).then(
                     (sub) => {
                         console.log("subscribed to prefix: " + publisher);
                     },
                     (err) => {
                         console.log("failed to subscribe: " + publisher + " ->" + err);
                     });
-                session.call('aggregator.frontend.car_score_history').then(
-                    (payload) => {
+                session.subscribe(publisher2, note_callback).then(
+                    (sub) => {
+                        console.log("subscribed to prefix: " + publisher);
                     },
                     (err) => {
-                        console.log("failed to call: " + publisher + " ->" + err);
+                        console.log("failed to subscribe: " + publisher + " ->" + err);
                     });
             };
         }
 
-        static get is() { return "graph-component"; }
+        static get is() { return "notification-component"; }
     }
-
-    customElements.define(graphData.is, graphData);
+    customElements.define(noteData.is, noteData);
 </script>

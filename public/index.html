@@ -18,6 +18,7 @@ in a browser window. Furthermore I want to:
     <link rel="import" href="mycomponents/score-comp.html">
     <link rel="import" href="mycomponents/graph-comp.html">
     <link rel="import" href="mycomponents/gauge-comp.html">
+    <link rel="import" href="mycomponents/notification.html">
     <link rel="import" href="bower_components/paper-button/paper-button.html">
     <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
     <script src="mycomponents/autobahn.min.js"></script>
@@ -35,10 +36,11 @@ in a browser window. Furthermore I want to:
 </a>
 
 <div class="layout horizontal">
+    <notification-component id="note"></notification-component>
     <speed-component></speed-component>
     <score-component id="score"></score-component>
-    <graph-component id="graph"></graph-component>
     <gauge-component id="gauge"></gauge-component>
+    <graph-component id="graph"></graph-component>
 </div>
 
 
