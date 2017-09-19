@@ -1,0 +1,74 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="gauge-component">
+    <template>
+        <link rel="stylesheet" href="materialize.min.css">
+        <iframe src="mycomponents/gauge.html" height="500" frameBorder="0" scrolling="no"></iframe>
+
+        <style>
+            iframe {
+                background-color: #006699;
+                width: 720px;
+                height: 20%;
+                margin: 2%;
+            }
+        </style>
+
+    </template>
+</dom-module>
+
+
+<script src="autobahn.min.js"></script>
+
+<script>
+    let graphy2 = 0;
+    const gauge_callback2 = (arg) => {
+        graphy2 = arg[0].payload;
+    };
+
+    class gaugeData extends Polymer.Element {
+        constructor() {
+            super();
+            this.wamp_connect('192.168.40.122');
+            setInterval(() => {
+                this.graphy2 = graphy2;
+            }, 900)
+        }
+
+        wamp_connect(arg) {
+            const service_name = 'gauge-comp';
+
+            this.wampConnection = new autobahn.Connection({
+                url: 'ws://' + arg + ':8080/ws',
+                realm: "realm1",
+                authextra: {service_name: service_name}
+            });
+            this.wampConnection.open();
+
+            const publisher = 'aggregator.frontend.score';
+
+            this.wampConnection.onopen = (session) => {
+                this.current_session = session;
+                console.log("Connection " + service_name + " session open");
+                session.subscribe(publisher, gauge_callback2).then(
+                    (sub) => {
+                        console.log("subscribed to prefix: " + publisher);
+                    },
+                    (err) => {
+                        console.log("failed to subscribe: " + publisher + " ->" + err);
+                    });
+                session.call('aggregator.frontend.car_score_history').then(
+                    (payload) => {
+                        console.log("returns: " + payload);
+                    },
+                    (err) => {
+                        console.log("failed to call: " + publisher + " ->" + err);
+                    });
+            };
+        }
+
+        static get is() { return "gauge-component"; }
+    }
+
+    customElements.define(gaugeData.is, gaugeData);
+</script>

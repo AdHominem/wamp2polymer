@@ -1,0 +1,234 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+
+
+<dom-module id="score-component">
+    <template>
+        <link rel="stylesheet" href="materialize.min.css">
+
+        <div class="box">
+            <h3>Your current score {{score}}</h3>
+        </div>
+
+        <style>
+            .box {
+                background-color: #006699;
+                width: 50%;
+                height: 20%;
+                margin: 2%;
+                padding: 1%;
+                text-align: center;
+            }
+        </style>
+
+    </template>
+</dom-module>
+
+
+<script src="autobahn.min.js"></script>
+
+<script>
+    // Scrollbar
+    function ScoreBar(nameDiv, width, barPos, height){
+
+        var padding = 15;
+
+        var div = d3.select('#' + nameDiv ),
+            svg = div.append('svg');
+
+        svg.attr('width', width).attr('height', height);
+
+        // Gradient Fill
+        var svgDefs = svg.append('defs');
+
+        var mainGradient = svgDefs.append('linearGradient')
+            .attr('id', 'mainGradient');
+
+        mainGradient.append('stop')
+            .style("stop-color","#BF0000")
+            .attr('offset', '0');
+
+        mainGradient.append('stop')
+            .style("stop-color","#FFEC00")
+            .attr('offset', '0.5');
+
+        mainGradient.append('stop')
+            .style("stop-color","#41A128")
+            .attr('offset', '1');
+
+        svg.append('rect')
+            .style("fill", "url(#mainGradient)")
+            .attr('x', padding)
+            .attr('y', padding)
+            .attr('width', (width / 2) - 1.5 * padding)
+            .attr('height', height - 2 * padding);
+
+
+        svg.append("rect")
+            .attr("class","bar")
+            .attr("height",height-20)
+            .attr("width",20)
+            .attr("x",barPos)
+            .attr("y",10)
+            .style("fill", "#313027");
+
+
+        var defs = svg.append("defs");
+
+        var filter = defs.append("filter")
+            .attr("id", "drop-shadow")
+            .attr("height", "150%")
+            .attr("width", "200%");
+
+        filter.append("feGaussianBlur")
+            .attr("in", "SourceAlpha")
+            .attr("stdDeviation", 5)
+            .attr("result", "blur");
+
+        filter.append("feOffset")
+            .attr("in", "blur")
+            .attr("dx", 2)
+            .attr("dy", 2)
+            .attr("result", "offsetBlur");
+
+        var feMerge = filter.append("feMerge");
+
+        feMerge.append("feMergeNode")
+            .attr("in", "offsetBlur");
+        feMerge.append("feMergeNode")
+            .attr("in", "SourceGraphic");
+
+        svg.selectAll(".bar")
+            .style("filter", "url(#drop-shadow)");
+    }
+
+    function LineChart(){
+        var lineData = [{
+            'x': 1,
+            'y': 5
+        }, {
+            'x': 20,
+            'y': 20
+        }, {
+            'x': 40,
+            'y': 10
+        }, {
+            'x': 60,
+            'y': 40
+        }, {
+            'x': 80,
+            'y': 5
+        }, {
+            'x': 100,
+            'y': 60
+        }];
+
+        var lineData2 = [{
+            'x': 1,
+            'y': 7
+        }, {
+            'x': 20,
+            'y': 40
+        }, {
+            'x': 40,
+            'y': 20
+        }, {
+            'x': 60,
+            'y': 10
+        }, {
+            'x': 80,
+            'y': 25
+        }, {
+            'x': 100,
+            'y': 50
+        }];
+
+        var vis = d3.select("#visualisation"),
+            WIDTH = 1000,
+            HEIGHT = 500,
+            MARGINS = {
+                top: 20,
+                right: 20,
+                bottom: 20,
+                left: 50
+            };
+
+        vis.append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("fill", "#444444");
+
+        var xRange = d3.scale.linear()
+            .range([MARGINS.left, WIDTH - MARGINS.right])
+            .domain([d3.min(lineData, (d) =>d.x),d3.max(lineData,(d) => d.x)])
+
+        var yRange = d3.scale.linear()
+            .range([HEIGHT - MARGINS.top, MARGINS.bottom])
+            .domain([d3.min(lineData, (d) => d.y),d3.max(lineData, (d) => d.y)])
+
+        var lineFunc = d3.svg.line()
+            .x((d) => xRange(d.x))
+            .y((d) => yRange(d.y))
+            .interpolate('basis');
+
+        vis.append("svg:path")
+            .attr("d", lineFunc(lineData))
+            .attr("stroke", "orange")
+            .attr("stroke-width", 3)
+            .attr("fill", "none");
+
+        vis.append("svg:path")
+            .attr("d", lineFunc(lineData2))
+            .attr("stroke", "grey")
+            .attr("stroke-width", 3)
+            .attr("fill", "none");
+    }
+
+    ScoreBar('graph-draw', 200, 100, 50 );
+
+    let score = 0;
+    const score_callback = (arg) => {
+        score = arg[0].score;
+    };
+
+    class scoreData extends Polymer.Element {
+        constructor() {
+            super();
+            this.wamp_connect('192.168.40.122');
+            setInterval(() => {
+                this.score = score;
+            }, 900)
+        }
+
+        wamp_connect(arg) {
+            const service_name = 'score-comp';
+
+            this.wampConnection = new autobahn.Connection({
+                url: 'ws://' + arg + ':8080/ws',
+                realm: "realm1",
+                authextra: {service_name: service_name}
+            });
+            this.wampConnection.open();
+
+            const publisher = 'aggregator.frontend.score';
+
+            this.wampConnection.onopen = (session) => {
+                this.current_session = session;
+                console.log("Connection " + service_name + " session open");
+                session.subscribe(publisher, score_callback).then(
+                    (sub) => {
+                        console.log("subscribed to prefix: " + publisher);
+                    },
+                    (err) => {
+                        console.log("failed to subscribe: " + publisher + " ->" + err);
+                    });
+            };
+        }
+
+        static get is() { return "score-component"; }
+    }
+    customElements.define(scoreData.is, scoreData);
+</script>

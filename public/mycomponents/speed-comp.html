@@ -1,0 +1,72 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+
+<dom-module id="speed-component">
+    <template>
+        <link rel="stylesheet" href="materialize.min.css">
+        <div class="box">
+            <h3>Your current Speed {{speed}}</h3>
+        </div>
+
+        <style>
+            .box {
+                background-color: #006699;
+                width: 50%;
+                height: 20%;
+                margin: 2%;
+                padding: 1%;
+                text-align: center;
+            }
+        </style>
+    </template>
+</dom-module>
+
+
+<script src="autobahn.min.js"></script>
+
+<script>
+    let speed = 0;
+    const obd_callback = (arg) => {
+        speed = arg[0].speed;
+    };
+
+    class cContiVehicleData extends Polymer.Element {
+        constructor() {
+            super();
+            this.wamp_connect('192.168.40.122');
+            setInterval(() => {
+                this.speed = speed;
+            }, 900)
+        }
+
+        wamp_connect(arg) {
+            const service_name = 'speed-comp';
+
+            this.wampConnection = new autobahn.Connection({
+                url: 'ws://' + arg + ':8080/ws',
+                realm: "realm1",
+                authextra: {service_name: service_name}
+            });
+            this.wampConnection.open();
+
+            const publisher = 'aggregator.frontend.score';
+
+            this.wampConnection.onopen = (session) => {
+                this.current_session = session;
+                console.log("Connection " + service_name + " session open");
+                session.subscribe(publisher, obd_callback).then(
+                    (sub) => {
+                        console.log("subscribed to prefix: " + publisher);
+                    },
+                    (err) => {
+                        console.log("failed to subscribe: " + publisher + " ->" + err);
+                    });
+            };
+        }
+
+        static get is() { return "speed-component"; }
+    }
+    customElements.define(cContiVehicleData.is, cContiVehicleData);
+</script>

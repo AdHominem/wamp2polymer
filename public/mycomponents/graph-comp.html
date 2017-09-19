@@ -1,0 +1,79 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="graph-component">
+    <template>
+        <link rel="stylesheet" href="materialize.min.css">
+        <div class="box">
+            <h3>Score</h3>
+            <iframe src="mycomponents/chart.html" width="500" height="300" frameBorder="0" scrolling="no"></iframe>
+            <iframe src="mycomponents/linechart.html" width="2000" height="500" frameBorder="0" scrolling="no"></iframe>
+        </div>
+
+        <style>
+            .box {
+                background-color: #006699;
+                width: 50%;
+                height: 20%;
+                margin: 2%;
+                padding: 1%;
+                text-align: center;
+            }
+        </style>
+
+    </template>
+</dom-module>
+
+
+<script src="autobahn.min.js"></script>
+
+<script>
+    let graphy = 0;
+    const graph_callback = (arg) => {
+        graphy = arg[0].payload;
+    };
+
+    class graphData extends Polymer.Element {
+        constructor() {
+            super();
+            this.wamp_connect('192.168.40.122');
+            setInterval(() => {
+                this.graphy = graphy;
+            }, 900)
+        }
+
+        wamp_connect(arg) {
+            const service_name = 'graph-comp';
+
+            this.wampConnection = new autobahn.Connection({
+                url: 'ws://' + arg + ':8080/ws',
+                realm: "realm1",
+                authextra: {service_name: service_name}
+            });
+            this.wampConnection.open();
+
+            const publisher = 'aggregator.frontend.score';
+
+            this.wampConnection.onopen = (session) => {
+                this.current_session = session;
+                console.log("Connection " + service_name + " session open");
+                session.subscribe(publisher, graph_callback).then(
+                    (sub) => {
+                        console.log("subscribed to prefix: " + publisher);
+                    },
+                    (err) => {
+                        console.log("failed to subscribe: " + publisher + " ->" + err);
+                    });
+                session.call('aggregator.frontend.car_score_history').then(
+                    (payload) => {
+                    },
+                    (err) => {
+                        console.log("failed to call: " + publisher + " ->" + err);
+                    });
+            };
+        }
+
+        static get is() { return "graph-component"; }
+    }
+
+    customElements.define(graphData.is, graphData);
+</script>

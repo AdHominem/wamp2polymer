@@ -1,0 +1,48 @@
+<!--Continental Automotive AG, foss@continental-corporation.com  
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!--***Example on how to make Polymer 2.0 Element************************************************************** 
+As a User I want to see all Data coming from OBD Worker. Topic Name and current Value should be visualized 
+in a browser window. Furthermore I want to:
+- choose the mp4 file that is played by the Persona Videlibo Worker
+- choose the KML File that is replayed by OBD Worker
+***************************************************************************************************************-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Vehicle Data</title>
+    <link rel="import" href="mycomponents/speed-comp.html">
+    <link rel="import" href="mycomponents/score-comp.html">
+    <link rel="import" href="mycomponents/graph-comp.html">
+    <link rel="import" href="mycomponents/gauge-comp.html">
+    <link rel="import" href="bower_components/paper-button/paper-button.html">
+    <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+    <script src="mycomponents/autobahn.min.js"></script>
+    <link rel="stylesheet" href="materialize.min.css">
+</head>
+
+<body>
+
+<a href="mycomponents/chart.html" tabindex="-1">
+    <paper-button class="indigo" raised>GRAPH</paper-button>
+</a>
+
+<a href="mycomponents/gauge.html" tabindex="-1">
+    <paper-button class="indigo" raised>GAUGE</paper-button>
+</a>
+
+<div class="layout horizontal">
+    <speed-component></speed-component>
+    <score-component id="score"></score-component>
+    <graph-component id="graph"></graph-component>
+    <gauge-component id="gauge"></gauge-component>
+</div>
+
+
+<script>
+</script>
+</body>
+</html>
