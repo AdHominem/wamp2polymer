@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <svg width="960" height="500"></svg>
 <script src="autobahn.min.js"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
@@ -47,7 +48,7 @@ d3.tsv("data.tsv", function(d) {
       .attr("y", 6)
       .attr("dy", "0.71em")
       .attr("text-anchor", "end")
-      .text("Price ($)");
+      .text("Score");
 
   g.append("path")
       .datum(data)
